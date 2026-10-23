@@ -73,13 +73,8 @@ const MapView = forwardRef(function MapView({ zones, communes, zoneOfCommune, si
     const lp = map.createPane('labels');
     lp.style.zIndex = 450; lp.style.pointerEvents = 'none';
 
-    const cluster = L.markerClusterGroup({
-      showCoverageOnHover: false, spiderfyOnMaxZoom: true, maxClusterRadius: 44,
-      iconCreateFunction: c => {
-        const n = c.getChildCount();
-        return L.divIcon({ className: 'site-mk', html: `<div class="cluster"><b>${n}</b></div>`, iconSize: [38, 38], iconAnchor: [19, 19] });
-      }
-    });
+    // chaque site garde son propre marqueur (pas de regroupement chiffré)
+    const cluster = L.layerGroup();
     const labels = L.layerGroup().addTo(map);
     const communeLabels = L.layerGroup();
     m.current = { map, cluster, labels, communeLabels, markers: {} };
@@ -169,7 +164,6 @@ const MapView = forwardRef(function MapView({ zones, communes, zoneOfCommune, si
     if (!zoneLayer) return;
     zoneLayer.eachLayer(l => l.setStyle(zoneStyle(zones.find(z => z.key === l.feature.properties.key))));
     el.current.classList.toggle('zoned', !!zone);
-    labels.eachLayer(l => l.getElement()?.classList.toggle('hidden', l.options.zoneKey === zone));
     communeLabels.clearLayers();
     const z = zones.find(x => x.key === zone);
     (z ? z.communeFeatures : communes).forEach(f => {
@@ -188,7 +182,7 @@ const MapView = forwardRef(function MapView({ zones, communes, zoneOfCommune, si
       mk.on('click', e => { L.DomEvent.stopPropagation(e); live.current.onSiteClick(s); });
       markers[s.id] = mk;
     });
-    cluster.addLayers(Object.values(markers));
+    Object.values(markers).forEach(mk => cluster.addLayer(mk));
     if (!map.hasLayer(cluster)) cluster.addTo(map);
     m.current.markers = markers;
   }, [sites]);
