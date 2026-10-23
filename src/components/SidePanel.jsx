@@ -5,22 +5,28 @@ import { CatIcon, Dot, ICON } from './ui.jsx';
 function Filters({ pool, cats, etats, onCats, onEtats }) {
   const count = (key, field) => pool.filter(s => s[field] === key).length;
   const toggle = (set, k, fn) => { const n = new Set(set); n.has(k) ? n.delete(k) : n.add(k); fn(n); };
+  const group = (title, set, fn, chips) => (
+    <div className="fgroup">
+      <div className="fgroup-t"><span>{title}</span>{set.size ? <button onClick={() => fn(new Set())}>Tout afficher</button> : null}</div>
+      <div className="chips">{chips}</div>
+    </div>
+  );
   return (
     <div className="filters">
-      <div className="chips">
+      {group('Catégorie', cats, onCats, <>
         {Object.entries(CATEGORIES).filter(([k]) => count(k, 'cat')).map(([k, c]) => (
           <button key={k} className={`chip ${cats.has(k) ? 'on' : ''}`} onClick={() => toggle(cats, k, onCats)} title={c.label}>
             <CatIcon cat={k} size={12} />{c.label.replace(/^Infrastructures /, '')} <span>{count(k, 'cat')}</span>
           </button>
         ))}
-      </div>
-      <div className="chips">
+      </>)}
+      {group('État', etats, onEtats, <>
         {Object.entries(ETATS).sort((a, b) => a[1].rank - b[1].rank).filter(([k]) => count(k, 'etatKey')).map(([k, e]) => (
           <button key={k} className={`chip ${etats.has(k) ? 'on' : ''}`} onClick={() => toggle(etats, k, onEtats)}>
             <Dot color={e.color} />{e.label} <span>{count(k, 'etatKey')}</span>
           </button>
         ))}
-      </div>
+      </>)}
     </div>
   );
 }
@@ -83,7 +89,7 @@ function ZoneSites({ list, site, onSite }) {
   );
 }
 
-export default function SidePanel({ ready, open, zones, zone, unplacedView, sites, visible, site, cats, etats, sync, spinning, onCats, onEtats, onZone, onUnplaced, onBack, onSite, onRefresh }) {
+export default function SidePanel({ ready, open, zones, zone, unplacedView, sites, visible, site, cats, etats, sync, spinning, onCats, onEtats, onZone, onUnplaced, onBack, onSite, onRefresh, onClose }) {
   const z = zones.find(x => x.key === zone);
   const unplaced = sites.filter(s => !s.zone);
   const pool = z ? z.sites : unplacedView ? unplaced : sites;
@@ -92,10 +98,11 @@ export default function SidePanel({ ready, open, zones, zone, unplacedView, site
   return (
     <aside className={`side glass${open ? ' open' : ''}`} id="side">
       <header>
+        <button className="side-close" aria-label="Fermer la liste" onClick={onClose}>{ICON.close}</button>
         {z || unplacedView ? <>
           <button className="back" onClick={onBack}>{ICON.back}Toutes les zones</button>
           <h2 className="zone-title" style={{ '--c': z ? z.color : '#7f8db0' }}><i></i>{z ? `Pôle ${z.name}` : 'Sans zone'}</h2>
-          <p className="zone-sub">{plural(list.length, 'infrastructure')}{z ? ` · ${plural(z.communes.length, 'commune')}` : ''}</p>
+          {/* <p className="zone-sub">{plural(list.length, 'infrastructure')}{z ? ` · ${plural(z.communes.length, 'commune')}` : ''}</p> */}
         </> : <h2>Zones</h2>}
         {ready ? <Filters pool={pool} cats={cats} etats={etats} onCats={onCats} onEtats={onEtats} /> : null}
       </header>

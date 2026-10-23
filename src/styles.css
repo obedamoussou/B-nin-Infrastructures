@@ -86,14 +86,18 @@ body.drawer-open .leaflet-bottom.leaflet-right{right:472px;transition:right .5s}
 
 /* ---------- panneau gauche ---------- */
 .side{position:fixed;left:16px;top:96px;bottom:16px;width:330px;display:flex;flex-direction:column;z-index:900;overflow:hidden}
-.side header{padding:16px 16px 10px;border-bottom:1px solid var(--line)}
+.side header{position:relative;padding:16px 16px 10px;border-bottom:1px solid var(--line)}
+.side-close{display:none}
 .side h2{margin:0 0 10px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);font-weight:600}
 .back{display:inline-flex;align-items:center;gap:4px;margin:-4px 0 10px -6px;padding:4px 8px 4px 4px;border:0;border-radius:8px;background:none;color:var(--muted);font-size:12px}
 .back:hover{color:var(--text);background:rgba(255,255,255,.05)}
 .side h2.zone-title{display:flex;align-items:center;gap:10px;margin:0;font-family:Fraunces,serif;font-size:22px;letter-spacing:0;text-transform:none;color:var(--text)}
 .zone-title i{width:12px;height:12px;border-radius:4px;background:var(--c);box-shadow:0 0 12px var(--c)}
 .zone-sub{margin:4px 0 12px;color:var(--muted);font-size:12.5px}
-.filters{display:flex;flex-direction:column;gap:6px}
+.filters{display:flex;flex-direction:column;gap:10px}
+.fgroup-t{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;font-size:10.5px;letter-spacing:.7px;text-transform:uppercase;color:var(--faint);font-weight:600}
+.fgroup-t button{padding:0;border:0;background:none;font-size:11px;letter-spacing:0;text-transform:none;font-weight:500;color:var(--yellow);opacity:.85}
+.fgroup-t button:hover{opacity:1}
 .chips{display:flex;flex-wrap:wrap;gap:5px}
 .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.03);font-size:11.5px;color:var(--muted);transition:.2s}
 .chip span{opacity:.6}
@@ -148,6 +152,12 @@ body.drawer-open .basemaps{right:524px}
 .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 90% at 100% 0%,color-mix(in srgb,var(--accent) 35%,transparent),transparent 60%);opacity:.6;pointer-events:none}
 .hero .close{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.25);display:grid;place-items:center;z-index:1}
 .hero .close:hover{border-color:var(--line-strong)}
+.hero-back{display:none}
+@media (max-width:760px){
+  /* flèche retour vers la liste, seulement sur mobile (sur ordinateur la liste reste visible) */
+  .hero .hero-back{position:relative;z-index:1;display:flex;width:fit-content;align-items:center;gap:6px;height:34px;margin:-8px 0 14px -8px;padding:0 12px 0 8px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--text);font-size:12.5px;font-weight:500}
+  .hero .hero-back svg{color:var(--accent)}
+}
 .hero h2{position:relative;margin:14px 40px 4px 0;font-family:Fraunces,serif;font-size:27px;font-weight:600;letter-spacing:-.3px;line-height:1.12}
 .hero .cap{position:relative;color:var(--muted);font-size:13px}
 .badges{position:relative;display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
@@ -171,6 +181,8 @@ body.drawer-open .basemaps{right:524px}
 .score{display:flex;align-items:baseline;gap:4px}
 .score b{font-family:Fraunces,serif;font-size:38px;font-weight:600;line-height:1;color:var(--c);text-shadow:0 0 24px color-mix(in srgb,var(--c) 45%,transparent)}
 .score>span{font-size:15px;color:var(--muted)}
+.score.empty b{color:var(--faint);text-shadow:none}
+.score small .tbd{margin-top:4px}
 .score small{margin-left:auto;text-align:right;font-size:11.5px;color:var(--faint);line-height:1.5}
 .radar{display:block;width:100%;height:auto;margin-top:6px;overflow:visible}
 .radar-ring{fill:none;stroke:var(--line)}
@@ -240,6 +252,9 @@ body.drawer-open .basemaps{right:524px}
   .toggle-side{display:grid;place-items:center;width:46px;height:46px;border-radius:14px}
   .side{top:auto;left:12px;right:12px;bottom:12px;width:auto;height:52vh;transform:translateY(calc(100% + 24px));transition:transform .4s}
   .side.open{transform:none}
+  /* croix pour refermer la liste (sur ordinateur le panneau reste toujours affiché) */
+  .side-close{position:absolute;top:10px;right:10px;z-index:1;display:grid;place-items:center;width:32px;height:32px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.25)}
+  .side-close:hover{border-color:var(--line-strong)}
   .drawer{top:auto;left:12px;right:12px;bottom:12px;width:auto;height:62vh;transform:translateY(calc(100% + 24px))}
   .hero h2{font-size:23px}
   .basemaps{right:auto;left:12px;bottom:12px}

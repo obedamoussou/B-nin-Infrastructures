@@ -67,6 +67,8 @@ const num = v => { const n = parseFloat((v || '').replace(/\s/g, '').replace(','
 /* Toute colonne autre que le nom du site, la note globale et l'état est un critère (son titre sert de libellé) */
 function readNotations(rows) {
   const byId = {};
+  const head = rows.find(r => r.some(c => ['sites', 'site', 'nom'].includes(norm(c)))) || [];
+  const labels = head.map(h => (h || '').trim()).filter(h => norm(h) && !['sites', 'site', 'nom'].includes(norm(h)) && !NOT_CRITERIA.test(norm(h)));
   for (const r of toRecords(rows, ['sites', 'site', 'nom'])) {
     const crit = Object.entries(r._cells).filter(([h]) => h !== r._key && norm(h) && !NOT_CRITERIA.test(norm(h)));
     const criteres = crit.map(([label, v]) => ({ label, note: num(v) }));
@@ -79,7 +81,7 @@ function readNotations(rows) {
       moyenne: notes.length ? total / notes.length : null, complet: notes.length === criteres.length
     };
   }
-  return byId;
+  return { byId, labels };
 }
 
 /* ---------- communes et zones ---------- */
@@ -162,7 +164,11 @@ export async function loadData() {
     s.nom = r._cells[r._key];
     s.cat = categoryOf(s.categorie);
     // État : celui de l'onglet « Notations », sinon déduit des notes, sinon celui de l'onglet « Sites »
-    s.notation = notations[norm(s.nom)] || null;
+    // site pas encore noté : critères vides, l'hexagone s'affiche quand même
+    s.notation = notations.byId[norm(s.nom)] || (notations.labels.length ? {
+      criteres: notations.labels.map(label => ({ label, note: null })), etat: '', total: 0,
+      max: notations.labels.length * NOTE_MAX, moyenne: null, complet: false
+    } : null);
     const n = s.notation;
     if (n && !isTbd(n.etat)) { s.etat = n.etat; s.etatSource = 'notation'; }
     else if (n && n.moyenne !== null) { s.etat = ''; s.etatSource = 'calcul'; }

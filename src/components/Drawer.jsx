@@ -3,10 +3,11 @@ import { norm, isTbd, parseDate, fmtDate, since, fmtNum, fullNum, link, CATEGORI
 import { NOTE_MAX } from '../lib/config.js';
 import { Val, Dot, EtatBadge, CatIcon, ICON } from './ui.jsx';
 
-function Hero({ s, zone, onClose }) {
+function Hero({ s, zone, onClose, onBack }) {
   const c = CATEGORIES[s.cat];
   return (
     <div className="hero" style={{ '--accent': c.color }}>
+      <button className="back hero-back" onClick={onBack}>{ICON.back}{zone ? `Pôle ${zone.name}` : 'Liste des sites'}</button>
       <button className="close" aria-label="Fermer" onClick={onClose}>{ICON.close}</button>
       <CatIcon cat={s.cat} size={22} className="cat-ico xl" />
       <h2>{s.nom}</h2>
@@ -74,10 +75,10 @@ function Radar({ n, color }) {
     <svg className="radar" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={n.criteres.map(c => `${c.label} : ${fmtNote(c.note)}/${NOTE_MAX}`).join(', ')}>
       {Array.from({ length: NOTE_MAX }, (_, k) => <polygon key={k} className={`radar-ring${k === NOTE_MAX - 1 ? ' out' : ''}`} points={ring(R * (k + 1) / NOTE_MAX)} />)}
       {n.criteres.map((_, i) => { const [x, y] = pt(i, R); return <line key={i} className="radar-axis" x1={cx} y1={cy} x2={x} y2={y} />; })}
-      <g className="radar-shape" style={{ '--c': color, transformOrigin: `${cx}px ${cy}px` }}>
+      {n.moyenne === null ? null : <g className="radar-shape" style={{ '--c': color, transformOrigin: `${cx}px ${cy}px` }}>
         <polygon points={n.criteres.map((c, i) => pt(i, R * (c.note || 0) / NOTE_MAX).join(',')).join(' ')} />
         {n.criteres.map((c, i) => { const [x, y] = pt(i, R * (c.note || 0) / NOTE_MAX); return <circle key={i} cx={x} cy={y} r="3.5" />; })}
-      </g>
+      </g>}
       {n.criteres.map((c, i) => {
         const [x, y] = pt(i, R + 16), dx = x - cx, dy = y - cy;
         const anchor = Math.abs(dx) < 8 ? 'middle' : dx > 0 ? 'start' : 'end';
@@ -101,10 +102,12 @@ function Notation({ s }) {
   const color = ETATS[n.moyenne === null ? 'nd' : etatOfNote(n.moyenne)].color;
   return (
     <div className="card"><h3>Notation <span className="n">{plural(n.criteres.length, 'critère')} · sur {NOTE_MAX}</span></h3>
-      <div className="score" style={{ '--c': color }}>
-        <b>{fmtNote(n.moyenne)}</b><span>/{NOTE_MAX}</span>
-        <small>Moyenne des critères<br />{fmtNote(n.total)} / {n.max} points{n.complet ? '' : ' · notation incomplète'}</small>
-      </div>
+      {n.moyenne === null
+        ? <div className="score empty"><b>—</b><span>/{NOTE_MAX}</span><small>Site pas encore noté<br /><span className="tbd">À préciser</span></small></div>
+        : <div className="score" style={{ '--c': color }}>
+          <b>{fmtNote(n.moyenne)}</b><span>/{NOTE_MAX}</span>
+          <small>Moyenne des critères<br />{fmtNote(n.total)} / {n.max} points{n.complet ? '' : ' · notation incomplète'}</small>
+        </div>}
       {n.criteres.length >= 3 ? <Radar n={n} color={color} /> : (
         <div className="bars">{n.criteres.map((c, i) => (
           <div key={i}><span>{c.label}</span><i><em style={{ width: `${(c.note || 0) / NOTE_MAX * 100}%` }}></em></i><b>{fmtNote(c.note)}</b></div>
@@ -179,13 +182,13 @@ function Extra({ s }) {
   );
 }
 
-export default function Drawer({ s, open, version, zones, onClose, onZone, onLocate }) {
+export default function Drawer({ s, open, version, zones, onClose, onBack, onZone, onLocate }) {
   const zone = s && zones.find(z => z.key === s.zone);
   return (
     <aside className={`drawer glass${open ? ' open' : ''}`} aria-live="polite">
       {/* la clé force un rendu neuf (animations, défilement en haut) à chaque ouverture */}
       <Fragment key={version}>{s ? <>
-        <Hero s={s} zone={zone} onClose={onClose} />
+        <Hero s={s} zone={zone} onClose={onClose} onBack={onBack} />
         <div className="body">
           <Etat s={s} />
           <Notation s={s} />

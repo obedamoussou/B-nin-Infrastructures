@@ -8,8 +8,8 @@ const esc = s => (s ?? '').toString().replace(/[&<>"']/g, c => ({ '&': '&amp;', 
 const mobile = () => innerWidth < 760;
 
 /* Marges pour que la zone visée ne passe pas sous les panneaux */
-const padding = drawerOpen => mobile()
-  ? { paddingTopLeft: [16, 130], paddingBottomRight: [16, drawerOpen ? innerHeight * .55 : 40] }
+const padding = (drawerOpen, sideOpen = false) => mobile()
+  ? { paddingTopLeft: [16, 130], paddingBottomRight: [16, drawerOpen || sideOpen ? innerHeight * .55 : 40] }
   : { paddingTopLeft: [370, 96], paddingBottomRight: [drawerOpen ? 480 : 40, 40] };
 
 function siteIcon(s, selected) {
@@ -77,7 +77,8 @@ const MapView = forwardRef(function MapView({ zones, communes, zoneOfCommune, si
     const zoneStyle = z => {
       const cur = live.current.zone;
       const sel = cur === z.key, dim = cur && !sel;
-      return { color: z.color, weight: sel ? 2.6 : 1.4, opacity: dim ? .35 : .9, fillColor: z.color, fillOpacity: sel ? .08 : dim ? .04 : .22 };
+      // les autres pôles gardent leur couleur pour rester repérables
+      return { color: z.color, weight: sel ? 3 : 1.4, opacity: dim ? .7 : .95, fillColor: z.color, fillOpacity: sel ? .1 : dim ? .16 : .22 };
     };
     const zoneLayer = L.geoJSON(
       { type: 'FeatureCollection', features: zones.filter(z => z.geometry).map(z => ({ type: 'Feature', properties: { key: z.key }, geometry: z.geometry })) },
@@ -87,7 +88,7 @@ const MapView = forwardRef(function MapView({ zones, communes, zoneOfCommune, si
           const z = zones.find(x => x.key === f.properties.key);
           layer.bindTooltip(`<b>Pôle ${esc(z.name)}</b><span>${plural(z.sites.length, 'infrastructure')} · ${plural(z.communes.length, 'commune')}</span>`, { sticky: true, className: 'map-tip', direction: 'top', offset: [0, -8] });
           layer.on({
-            mouseover: () => { if (live.current.zone !== z.key) layer.setStyle({ fillOpacity: live.current.zone ? .1 : .34 }); },
+            mouseover: () => { if (live.current.zone !== z.key) layer.setStyle({ fillOpacity: .32 }); },
             mouseout: () => layer.setStyle(zoneStyle(z)),
             click: e => { L.DomEvent.stopPropagation(e); live.current.onZoneClick(z); }
           });
@@ -107,7 +108,7 @@ const MapView = forwardRef(function MapView({ zones, communes, zoneOfCommune, si
       if (!z.geometry) return;
       L.marker([z.center.lat, z.center.lng], {
         icon: L.divIcon({ className: '', html: `<div class="zone-label" style="--c:${z.color}"><b>${esc(z.name)}</b><span>${z.sites.length}</span></div>`, iconSize: [0, 0] }),
-        keyboard: false
+        keyboard: false, zoneKey: z.key
       }).on('click', e => { L.DomEvent.stopPropagation(e); live.current.onZoneClick(z); }).addTo(labels);
     });
 
@@ -121,7 +122,7 @@ const MapView = forwardRef(function MapView({ zones, communes, zoneOfCommune, si
     if (!zoneLayer) return;
     zoneLayer.eachLayer(l => l.setStyle(zoneStyle(zones.find(z => z.key === l.feature.properties.key))));
     el.current.classList.toggle('zoned', !!zone);
-    labels.eachLayer(l => l.getElement()?.classList.toggle('hidden', !!zone));
+    labels.eachLayer(l => l.getElement()?.classList.toggle('hidden', l.options.zoneKey === zone));
     communeLabels.clearLayers();
     const z = zones.find(x => x.key === zone);
     (z ? z.communeFeatures : communes).forEach(f => {
@@ -159,7 +160,7 @@ const MapView = forwardRef(function MapView({ zones, communes, zoneOfCommune, si
     fitBenin(drawerOpen = false) { m.current.map.flyToBounds(BENIN_BOUNDS, { ...padding(drawerOpen), duration: .9 }); },
     fitZone(z, drawerOpen = false) {
       if (!z.geometry) return;
-      m.current.map.flyToBounds(L.geoJSON(z.geometry).getBounds(), { ...padding(drawerOpen), duration: .9 });
+      m.current.map.flyToBounds(L.geoJSON(z.geometry).getBounds(), { ...padding(drawerOpen, true), duration: .9 });
     },
     fitCommune(f, drawerOpen = false) { m.current.map.flyToBounds(L.geoJSON(f).getBounds(), { ...padding(drawerOpen), duration: .9, maxZoom: 12 }); },
     flyToSite(s) {

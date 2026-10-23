@@ -44,6 +44,7 @@ export default function App() {
     const keep = site && site.zone === z.key;
     if (!keep) setSite(null);
     setZone(z.key); setUnplacedView(false);
+    if (innerWidth < 760 && !keep) setSideOpen(true);
     map.current.fitZone(z, keep);
   };
   // clic sur la carte : une autre zone l'ouvre, la zone déjà ouverte referme simplement la fiche
@@ -59,6 +60,14 @@ export default function App() {
     if (innerWidth < 760) setSideOpen(false);
   };
   const closeSite = () => setSite(null);
+  // flèche retour de la fiche : on retrouve la liste d'où l'on vient (sur mobile, le panneau se rouvre)
+  const backToList = () => { closeSite(); if (innerWidth < 760) setSideOpen(true); };
+  // menu (mobile) : toujours la liste des pôles ; un second appui referme le panneau
+  const openZoneList = () => {
+    if (sideOpen && !zone && !unplacedView) { setSideOpen(false); return; }
+    if (zone || unplacedView || site) back();
+    setSideOpen(true);
+  };
   const escape = () => {
     const { site, zone } = cur.current;
     if (site) closeSite(); else if (zone) back();
@@ -109,11 +118,11 @@ export default function App() {
     <div className="topbar">
       <div className="brand glass">
         <div className="flagbar"></div>
-        <div><h1>Bénin · Infrastructures</h1><small>Cartographie culture &amp; tourisme</small></div>
+        <div><h1>Bénin · Patrimoine</h1><small>Cartographie</small></div>
       </div>
       <div className="stats glass">{ready ? <Stats data={data} /> : null}</div>
       <div className="spacer"></div>
-      <button className="toggle-side glass" aria-label="Liste des zones" onClick={() => setSideOpen(o => !o)}>{ICON.menu}</button>
+      <button className="toggle-side glass" aria-label="Liste des zones" onClick={openZoneList}>{ICON.menu}</button>
       <Search sites={data.sites} zones={data.zones} communes={data.communes} zoneOfCommune={data.zoneOfCommune} onPick={onPick} onEscape={escape} />
     </div>
 
@@ -121,7 +130,7 @@ export default function App() {
       sites={data.sites} visible={visible} site={site} cats={cats} etats={etats} sync={data.sync} spinning={spinning}
       onCats={setCats} onEtats={setEtats} onZone={selectZone} onBack={back} onSite={selectSite}
       onUnplaced={() => { setZone(null); setUnplacedView(true); }}
-      onRefresh={() => { if (ready) refresh(); }} />
+      onRefresh={() => { if (ready) refresh(); }} onClose={() => setSideOpen(false)} />
 
     <div className="legend glass">
       {ready ? Object.entries(CATEGORIES).filter(([k]) => data.sites.some(s => s.cat === k)).map(([k, c]) => (
@@ -136,6 +145,6 @@ export default function App() {
       ))}
     </div>
 
-    <Drawer s={drawer.s} open={!!site} version={drawer.version} zones={data.zones} onClose={closeSite} onZone={selectZone} onLocate={s => map.current.flyToSite(s)} />
+    <Drawer s={drawer.s} open={!!site} version={drawer.version} zones={data.zones} onClose={closeSite} onBack={backToList} onZone={selectZone} onLocate={s => map.current.flyToSite(s)} />
   </>;
 }
