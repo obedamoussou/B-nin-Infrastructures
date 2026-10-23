@@ -42,6 +42,13 @@ body.drawer-open .leaflet-bottom.leaflet-right{right:472px;transition:right .5s}
 
 .zone-label{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:7px;padding:5px 6px 5px 11px;border-radius:999px;background:rgba(8,13,24,.82);border:1px solid color-mix(in srgb,var(--c) 55%,transparent);white-space:nowrap;cursor:pointer;box-shadow:0 6px 20px -6px rgba(0,0,0,.7);transition:opacity .3s,transform .2s}
 .zone-label:hover{transform:translate(-50%,-50%) scale(1.06)}
+.zone-label.left{transform:translate(-100%,-50%);transform-origin:right center}
+.zone-label.right{transform:translate(0,-50%);transform-origin:left center}
+.zone-label.left:hover{transform:translate(-100%,-50%) scale(1.06)}
+.zone-label.right:hover{transform:translate(0,-50%) scale(1.06)}
+.zone-arrow{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;pointer-events:none}
+.zone-arrow svg{position:absolute;left:-10px;top:-5px;fill:var(--c);filter:drop-shadow(0 0 4px rgba(0,0,0,.8))}
+.leaflet-overlay-pane path.hidden{display:none}
 .zone-label b{font-size:12px;font-weight:600}
 .zone-label span{min-width:22px;padding:2px 7px;border-radius:999px;background:var(--c);color:#0b1222;font-weight:700;font-size:11px;text-align:center}
 .hidden .zone-label,.zone-label.hidden,.leaflet-marker-icon.hidden{opacity:0;pointer-events:none}
@@ -157,6 +164,13 @@ body.drawer-open .basemaps{right:524px}
   /* flèche retour vers la liste, seulement sur mobile (sur ordinateur la liste reste visible) */
   .hero .hero-back{position:relative;z-index:1;display:flex;width:fit-content;align-items:center;gap:6px;height:34px;margin:-8px 0 14px -8px;padding:0 12px 0 8px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--text);font-size:12.5px;font-weight:500}
   .hero .hero-back svg{color:var(--accent)}
+  .hero.compact{display:flex;align-items:center;gap:10px;padding:12px 58px 12px 16px}
+  .hero.compact .hero-back{margin:0;padding:0;width:34px;justify-content:center;flex:none}
+  .hero.compact .hero-back span,.hero.compact .cap,.hero.compact .badges{display:none}
+  .hero.compact .cat-ico.xl{width:36px;height:36px;border-radius:11px}
+  .hero.compact .cat-ico.xl svg{width:18px;height:18px}
+  .hero.compact h2{flex:1;min-width:0;margin:0;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hero.compact .close{top:50%;transform:translateY(-50%)}
 }
 .hero h2{position:relative;margin:14px 40px 4px 0;font-family:Fraunces,serif;font-size:27px;font-weight:600;letter-spacing:-.3px;line-height:1.12}
 .hero .cap{position:relative;color:var(--muted);font-size:13px}
@@ -252,6 +266,9 @@ body.drawer-open .basemaps{right:524px}
   .toggle-side{display:grid;place-items:center;width:46px;height:46px;border-radius:14px}
   .side{top:auto;left:12px;right:12px;bottom:12px;width:auto;height:52vh;transform:translateY(calc(100% + 24px));transition:transform .4s}
   .side.open{transform:none}
+  .zone-label{gap:5px;padding:4px 4px 4px 9px}
+  .zone-label b{font-size:11px}
+  .zone-label span{min-width:18px;padding:1px 5px;font-size:10px}
   /* croix pour refermer la liste (sur ordinateur le panneau reste toujours affiché) */
   .side-close{position:absolute;top:10px;right:10px;z-index:1;display:grid;place-items:center;width:32px;height:32px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.25)}
   .side-close:hover{border-color:var(--line-strong)}

@@ -1,13 +1,13 @@
-import { Fragment } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { norm, isTbd, parseDate, fmtDate, since, fmtNum, fullNum, link, CATEGORIES, ETATS, statusStyle, plural, etatOfNote, fmtNote } from '../lib/utils.js';
 import { NOTE_MAX } from '../lib/config.js';
 import { Val, Dot, EtatBadge, CatIcon, ICON } from './ui.jsx';
 
-function Hero({ s, zone, onClose, onBack }) {
+function Hero({ s, zone, compact, onClose, onBack }) {
   const c = CATEGORIES[s.cat];
   return (
-    <div className="hero" style={{ '--accent': c.color }}>
-      <button className="back hero-back" onClick={onBack}>{ICON.back}{zone ? `Pôle ${zone.name}` : 'Liste des sites'}</button>
+    <div className={`hero${compact ? ' compact' : ''}`} style={{ '--accent': c.color }}>
+      <button className="back hero-back" aria-label="Retour à la liste" onClick={onBack}>{ICON.back}<span>{zone ? `Pôle ${zone.name}` : 'Liste des sites'}</span></button>
       <button className="close" aria-label="Fermer" onClick={onClose}>{ICON.close}</button>
       <CatIcon cat={s.cat} size={22} className="cat-ico xl" />
       <h2>{s.nom}</h2>
@@ -184,12 +184,21 @@ function Extra({ s }) {
 
 export default function Drawer({ s, open, version, zones, onClose, onBack, onZone, onLocate }) {
   const zone = s && zones.find(z => z.key === s.zone);
+  // mobile : en-tête réduit (icône + nom sur une ligne) dès qu'on fait défiler la fiche
+  const [compact, setCompact] = useState(false);
+  useEffect(() => setCompact(false), [version]);
+  const onScroll = e => {
+    const b = e.currentTarget;
+    if (b.scrollTop < 4) setCompact(false);
+    // seulement s'il reste assez à faire défiler, sinon l'en-tête rétréci ramènerait le défilement à zéro
+    else if (b.scrollTop > 24 && b.scrollHeight - b.clientHeight > 160) setCompact(true);
+  };
   return (
     <aside className={`drawer glass${open ? ' open' : ''}`} aria-live="polite">
       {/* la clé force un rendu neuf (animations, défilement en haut) à chaque ouverture */}
       <Fragment key={version}>{s ? <>
-        <Hero s={s} zone={zone} onClose={onClose} onBack={onBack} />
-        <div className="body">
+        <Hero s={s} zone={zone} compact={compact} onClose={onClose} onBack={onBack} />
+        <div className="body" onScroll={onScroll}>
           <Etat s={s} />
           <Notation s={s} />
           <Actions s={s} />

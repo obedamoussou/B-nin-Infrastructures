@@ -12,6 +12,43 @@ const padding = (drawerOpen, sideOpen = false) => mobile()
   ? { paddingTopLeft: [16, 130], paddingBottomRight: [16, drawerOpen || sideOpen ? innerHeight * .55 : 40] }
   : { paddingTopLeft: [370, 96], paddingBottomRight: [drawerOpen ? 480 : 40, 40] };
 
+/* Emplacement des étiquettes de pôles : à l'ouest ou à l'est du pays, à hauteur de leur pôle, sans se chevaucher */
+const CALLOUT_GAP = .42, CALLOUT_MARGIN = .3; // en degrés
+// vue d'ensemble : sur mobile, place sur les côtés pour les étiquettes des pôles
+const overview = (drawerOpen = false) => {
+  const p = padding(drawerOpen);
+  if (mobile()) { p.paddingTopLeft[0] = 106; p.paddingBottomRight[0] = 106; }
+  return p;
+};
+function bboxOf(geom) {
+  const b = [180, 90, -180, -90];
+  const walk = c => typeof c[0] === 'number'
+    ? (b[0] = Math.min(b[0], c[0]), b[1] = Math.min(b[1], c[1]), b[2] = Math.max(b[2], c[0]), b[3] = Math.max(b[3], c[1]))
+    : c.forEach(walk);
+  walk(geom.coordinates);
+  return b;
+}
+function calloutLayout(zones, communes) {
+  const boxes = communes.map(f => f.bbox ??= bboxOf(f.geometry));
+  // bord du pays à une latitude donnée (côté ouest : -1, côté est : 1)
+  const edge = (lat, side) => {
+    const xs = boxes.filter(b => b[1] - .15 <= lat && b[3] + .15 >= lat).map(b => side < 0 ? b[0] : b[2]);
+    return xs.length ? (side < 0 ? Math.min(...xs) : Math.max(...xs)) : BENIN_BOUNDS[side < 0 ? 0 : 1][1];
+  };
+  const placed = zones.filter(z => z.geometry && z.center).sort((a, b) => a.center.lng - b.center.lng);
+  const half = Math.ceil(placed.length / 2);
+  return [placed.slice(0, half), placed.slice(half)].flatMap((group, gi) => {
+    const side = gi ? 1 : -1;
+    let prev = Infinity;
+    return group.sort((a, b) => b.center.lat - a.center.lat).map(z => {
+      const lat = Math.min(z.center.lat, prev - CALLOUT_GAP); prev = lat;
+      const e = [edge(lat, side), edge(z.center.lat, side)];
+      const lng = (side < 0 ? Math.min(...e) : Math.max(...e)) + side * CALLOUT_MARGIN;
+      return { z, at: [lat, lng], side: side < 0 ? 'left' : 'right' };
+    });
+  });
+}
+
 function siteIcon(s, selected) {
   const c = CATEGORIES[s.cat].color, e = ETATS[s.etatKey].color;
   return L.divIcon({
@@ -31,7 +68,7 @@ const MapView = forwardRef(function MapView({ zones, communes, zoneOfCommune, si
   useEffect(() => {
     const map = L.map(el.current, { zoomControl: false, minZoom: 6, maxZoom: 18, maxBounds: [[4.5, -1.5], [14, 6]], maxBoundsViscosity: .8, zoomSnap: .25 });
     L.control.zoom({ position: 'bottomright', zoomInTitle: 'Zoomer', zoomOutTitle: 'Dézoomer' }).addTo(map);
-    map.fitBounds(BENIN_BOUNDS, padding(false));
+    map.fitBounds(BENIN_BOUNDS, overview());
     map.on('click', () => live.current.onBackground());
     const lp = map.createPane('labels');
     lp.style.zIndex = 450; lp.style.pointerEvents = 'none';
@@ -103,13 +140,23 @@ const MapView = forwardRef(function MapView({ zones, communes, zoneOfCommune, si
         : { color: '#ffffff', weight: .6, opacity: .22, fillColor: '#8a96ad', fillOpacity: .12, dashArray: '3 3' }
     }).addTo(map);
 
+    // noms des pôles hors du pays, reliés à leur pôle par un trait fléché
     labels.clearLayers();
-    zones.forEach(z => {
-      if (!z.geometry) return;
-      L.marker([z.center.lat, z.center.lng], {
-        icon: L.divIcon({ className: '', html: `<div class="zone-label" style="--c:${z.color}"><b>${esc(z.name)}</b><span>${z.sites.length}</span></div>`, iconSize: [0, 0] }),
-        keyboard: false, zoneKey: z.key
-      }).on('click', e => { L.DomEvent.stopPropagation(e); live.current.onZoneClick(z); }).addTo(labels);
+    calloutLayout(zones, communes).forEach(({ z, at, side }) => {
+      const center = [z.center.lat, z.center.lng];
+      const open = e => { L.DomEvent.stopPropagation(e); live.current.onZoneClick(z); };
+      L.polyline([at, center], { color: z.color, weight: 1.3, opacity: .85, interactive: false, zoneKey: z.key }).addTo(labels);
+      // angle à l'écran (identique à tous les niveaux de zoom en projection Mercator)
+      const a = map.project(at, 7), b = map.project(center, 7);
+      const deg = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+      L.marker(center, {
+        interactive: false, keyboard: false, zoneKey: z.key,
+        icon: L.divIcon({ className: '', html: `<div class="zone-arrow" style="--c:${z.color};transform:rotate(${deg}deg)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M0 0L10 5L0 10z"/></svg></div>`, iconSize: [0, 0] })
+      }).addTo(labels);
+      L.marker(at, {
+        keyboard: false, zoneKey: z.key,
+        icon: L.divIcon({ className: '', html: `<div class="zone-label ${side}" style="--c:${z.color}"><b>${esc(z.name)}</b><span>${z.sites.length}</span></div>`, iconSize: [0, 0] })
+      }).on('click', open).addTo(labels);
     });
 
     m.current.zoneLayer = zoneLayer; m.current.zoneStyle = zoneStyle;
@@ -157,7 +204,7 @@ const MapView = forwardRef(function MapView({ zones, communes, zoneOfCommune, si
   }, [site, sites]);
 
   useImperativeHandle(ref, () => ({
-    fitBenin(drawerOpen = false) { m.current.map.flyToBounds(BENIN_BOUNDS, { ...padding(drawerOpen), duration: .9 }); },
+    fitBenin(drawerOpen = false) { m.current.map.flyToBounds(BENIN_BOUNDS, { ...overview(drawerOpen), duration: .9 }); },
     fitZone(z, drawerOpen = false) {
       if (!z.geometry) return;
       m.current.map.flyToBounds(L.geoJSON(z.geometry).getBounds(), { ...padding(drawerOpen, true), duration: .9 });
