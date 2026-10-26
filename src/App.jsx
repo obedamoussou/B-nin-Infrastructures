@@ -118,7 +118,7 @@ export default function App() {
     <div className="topbar">
       <div className="brand glass">
         <div className="flagbar"></div>
-        <div><h1>Bénin · Site Touristique</h1><small>Cartographie</small></div>
+        <div><h1>Bénin · Sites Touristiques</h1><small>Cartographie</small></div>
       </div>
       <div className="stats glass">{ready ? <Stats data={data} /> : null}</div>
       <div className="spacer"></div>

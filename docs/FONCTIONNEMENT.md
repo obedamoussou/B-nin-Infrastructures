@@ -107,7 +107,8 @@ La ligne d'en-tête est repérée automatiquement (celle qui contient « Sites �
 | Toutes les autres colonnes | **Indicateurs**. Le titre de la colonne sert de libellé dans la fiche ; on peut en ajouter, en retirer ou en renommer. |
 
 Dans la fiche, la carte **Notation** affiche chaque indicateur dans une case :
-- titre commençant par « Note » (ex. « Note de satisfaction usagers ») → valeur **sur 5** avec une barre ;
+- titre commençant par « Note » (ex. « Note de satisfaction usagers ») → **cercle** qui se remplit, note **sur 5** ;
+- titre commençant par « Niveau » (ex. « Niveau de modernisation ») → **cercle** qui se remplit, valeur **sur 100 %** (`45` ou `45 %`) ;
 - autre valeur numérique (ex. « Nombre de visiteurs ») → nombre mis en forme (12 500) ;
 - case vide ou « A préciser » → « À préciser ». Un site absent de l'onglet affiche tous ses indicateurs « À préciser ».
 

@@ -50,10 +50,10 @@ function Etat({ s }) {
   );
 }
 
-/* Note sur NOTE_MAX en anneau qui se remplit ; couleur selon la note (vide tant qu'elle n'est pas renseignée) */
-function NoteRing({ n }) {
-  const R = 26, C = 2 * Math.PI * R;
-  const ratio = n === null ? 0 : Math.max(0, Math.min(1, n / NOTE_MAX));
+/* Valeur en anneau qui se remplit (note sur NOTE_MAX ou pourcentage) ; couleur selon la valeur, vide tant qu'elle n'est pas renseignée */
+function NoteRing({ n, pct }) {
+  const R = 26, C = 2 * Math.PI * R, max = pct ? 100 : NOTE_MAX;
+  const ratio = n === null ? 0 : Math.max(0, Math.min(1, n / max));
   const color = ratio >= .8 ? '#2fd08a' : ratio >= .6 ? '#9be15d' : ratio >= .4 ? '#f4c542' : ratio >= .2 ? '#ff7a59' : '#ff3b5c';
   return (
     <div className="ring" style={{ '--c': color }}>
@@ -61,17 +61,20 @@ function NoteRing({ n }) {
         <circle className="ring-track" cx="32" cy="32" r={R} />
         {n === null ? null : <circle className="ring-fill" cx="32" cy="32" r={R} strokeDasharray={C} style={{ '--off': C * (1 - ratio), '--len': C }} />}
       </svg>
-      <b>{n === null ? '—' : n.toLocaleString('fr-FR', { maximumFractionDigits: 1 })}<small>/{NOTE_MAX}</small></b>
+      <b>{n === null ? '—' : n.toLocaleString('fr-FR', { maximumFractionDigits: 1 })}<small>{pct ? '%' : `/${NOTE_MAX}`}</small></b>
     </div>
   );
 }
 
-/* Valeur d'un indicateur : note sur NOTE_MAX (titre en « Note… »), nombre, ou texte tel quel */
+/* Indicateurs affichés en anneau : notes sur NOTE_MAX (titre en « Note… ») et pourcentages (titre en « Niveau… ») */
+const isRing = label => /^(note|niveau)/.test(norm(label));
+
+/* Valeur d'un indicateur : anneau (note ou pourcentage), nombre, ou texte tel quel */
 function Indicateur({ label, value }) {
-  const n = Number((value || '').replace(/[\s\u00a0\u202f]/g, '').replace(',', '.'));
+  const n = Number((value || '').replace(/[\s\u00a0\u202f%]/g, '').replace(',', '.'));
   const isNum = !isTbd(value) && value.trim() !== '' && isFinite(n);
-  if (/^note/.test(norm(label)) && (isNum || isTbd(value))) return (
-    <div className="kv ind note"><span>{label}</span><NoteRing n={isNum ? n : null} /></div>
+  if (isRing(label) && (isNum || isTbd(value))) return (
+    <div className="kv ind note"><span>{label}</span><NoteRing n={isNum ? n : null} pct={/^niveau/.test(norm(label))} /></div>
   );
   return (
     <div className="kv ind">
@@ -85,7 +88,7 @@ function Notation({ s }) {
   if (!s.notation.length) return null;
   return (
     <div className="card"><h3>Notation <span className="n">{plural(s.notation.length, 'indicateur')}</span></h3>
-      <div className="grid2" style={{ marginTop: 0 }}>{/* les nombres d'abord, puis les notes : chaque type sur sa propre ligne */}
+      <div className="grid2" style={{ marginTop: 0 }}>{/* les notes sur 5 regroupées à la fin, côte à côte */}
         {[...s.notation].sort((a, b) => /^note/.test(norm(a.label)) - /^note/.test(norm(b.label))).map(c => <Indicateur key={c.label} {...c} />)}</div>
     </div>
   );

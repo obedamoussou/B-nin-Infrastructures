@@ -67,7 +67,7 @@ export const SNAPSHOT = {
     ].flatMap(([pole, ...villes]) => villes.map((v, i) => [i ? '' : pole, v]))
   ],
   notations: [
-    ['Sites', "Nombre d'outils modernes", 'Note de satisfaction usagers', 'Nombre de visiteurs', 'Note de satisfaction touristes'],
+    ['Sites', 'Niveau de modernisation', 'Note de satisfaction usagers', 'Nombre de visiteurs', 'Note de satisfaction touristes'],
     ['Musée international du Vodun', 'A préciser', 'A préciser', 'A préciser', 'A préciser']
   ],
   projets: [
