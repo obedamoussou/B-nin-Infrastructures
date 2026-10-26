@@ -1,8 +1,8 @@
 import { feature, merge } from 'topojson-client';
 import communesTopo from '../data/communes.topo.json';
-import { SHEET_ID, TABS, ZONE_COLORS, ZONE_FALLBACK_COLORS, NOTE_MAX } from './config.js';
+import { SHEET_ID, TABS, ZONE_COLORS, ZONE_FALLBACK_COLORS } from './config.js';
 import { SNAPSHOT } from './snapshot.js';
-import { norm, isTbd, parseCSV, etatOf, etatOfNote, categoryOf } from './utils.js';
+import { norm, isTbd, parseCSV, etatOf, categoryOf } from './utils.js';
 
 /* ---------- lecture des onglets ---------- */
 async function fetchTab(tab) {
@@ -50,7 +50,7 @@ function mapFields(rec, spec) {
 }
 
 const SITE_FIELDS = {
-  categorie: ['categorie', 'type'], pole: ['pole', 'zone'], etat: ['etat'], ville: ['ville', 'commune'],
+  categorie: ['categorie', 'type'], pole: ['pole', 'zone'], etat: ['niveaudevalorisation', 'valorisation', 'niveau', 'etat'], ville: ['ville', 'commune'],
   lastEval: ['datedeladerniere', 'derniereevaluation'], nextEval: ['datedelaprochaine', 'prochaineevaluation'],
   actions: ['actions'], gps: ['coordonnees', 'gps', 'position'], lat: ['latitude', 'lat'], lng: ['longitude', 'lng', 'lon']
 };
@@ -60,26 +60,14 @@ const PROJET_FIELDS = {
 };
 
 /* ---------- notations ---------- */
-// colonnes de l'onglet « Notations » qui ne sont pas des critères
-const NOT_CRITERIA = /^(noteglobale|note$|total|moyenne|score|etat|commentaire|observation|date)/;
-const num = v => { const n = parseFloat((v || '').replace(/\s/g, '').replace(',', '.')); return isFinite(n) ? Math.max(0, Math.min(NOTE_MAX, n)) : null; };
-
-/* Toute colonne autre que le nom du site, la note globale et l'état est un critère (son titre sert de libellé) */
+/* Chaque colonne de l'onglet « Notations » (hors nom du site) est un indicateur ; son titre sert de libellé */
+const SITE_KEYS = ['sites', 'site', 'nom'];
 function readNotations(rows) {
   const byId = {};
-  const head = rows.find(r => r.some(c => ['sites', 'site', 'nom'].includes(norm(c)))) || [];
-  const labels = head.map(h => (h || '').trim()).filter(h => norm(h) && !['sites', 'site', 'nom'].includes(norm(h)) && !NOT_CRITERIA.test(norm(h)));
-  for (const r of toRecords(rows, ['sites', 'site', 'nom'])) {
-    const crit = Object.entries(r._cells).filter(([h]) => h !== r._key && norm(h) && !NOT_CRITERIA.test(norm(h)));
-    const criteres = crit.map(([label, v]) => ({ label, note: num(v) }));
-    const notes = criteres.map(c => c.note).filter(n => n !== null);
-    const etat = Object.entries(r._cells).find(([h]) => norm(h).startsWith('etat'))?.[1] || '';
-    if (!notes.length && isTbd(etat)) continue;
-    const total = notes.reduce((a, b) => a + b, 0);
-    byId[norm(r._cells[r._key])] = {
-      criteres, etat, total, max: criteres.length * NOTE_MAX,
-      moyenne: notes.length ? total / notes.length : null, complet: notes.length === criteres.length
-    };
+  const head = rows.find(r => r.some(c => SITE_KEYS.includes(norm(c)))) || [];
+  const labels = head.map(h => (h || '').trim()).filter(h => norm(h) && !SITE_KEYS.includes(norm(h)));
+  for (const r of toRecords(rows, SITE_KEYS)) {
+    byId[norm(r._cells[r._key])] = labels.map(label => ({ label, value: r._cells[label] || '' }));
   }
   return { byId, labels };
 }
@@ -163,17 +151,9 @@ export async function loadData() {
     const s = mapFields(r, SITE_FIELDS);
     s.nom = r._cells[r._key];
     s.cat = categoryOf(s.categorie);
-    // État : celui de l'onglet « Notations », sinon déduit des notes, sinon celui de l'onglet « Sites »
-    // site pas encore noté : critères vides, l'hexagone s'affiche quand même
-    s.notation = notations.byId[norm(s.nom)] || (notations.labels.length ? {
-      criteres: notations.labels.map(label => ({ label, note: null })), etat: '', total: 0,
-      max: notations.labels.length * NOTE_MAX, moyenne: null, complet: false
-    } : null);
-    const n = s.notation;
-    if (n && !isTbd(n.etat)) { s.etat = n.etat; s.etatSource = 'notation'; }
-    else if (n && n.moyenne !== null) { s.etat = ''; s.etatSource = 'calcul'; }
-    else s.etatSource = 'fiche';
-    s.etatKey = s.etatSource === 'calcul' ? etatOfNote(n.moyenne) : etatOf(s.etat);
+    s.etatKey = etatOf(s.etat); // niveau de valorisation
+    // site absent de l'onglet « Notations » : indicateurs à préciser
+    s.notation = notations.byId[norm(s.nom)] || notations.labels.map(label => ({ label, value: '' }));
     s.commune = s.ville ? COMMUNE_BY_KEY[communeKey(s.ville)] || null : null;
     const z = s.pole && !isTbd(s.pole) ? addZone(s.pole) : (s.ville && zones[zoneOfCommune[communeKey(s.ville)]]) || null;
     s.zone = z ? z.key : null;

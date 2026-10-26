@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from 'react';
-import { norm, isTbd, parseDate, fmtDate, since, fmtNum, fullNum, link, CATEGORIES, ETATS, statusStyle, plural, etatOfNote, fmtNote } from '../lib/utils.js';
+import { norm, isTbd, parseDate, fmtDate, since, fmtNum, fullNum, link, CATEGORIES, ETATS, statusStyle, plural } from '../lib/utils.js';
 import { NOTE_MAX } from '../lib/config.js';
 import { Val, Dot, EtatBadge, CatIcon, ICON } from './ui.jsx';
 
@@ -21,7 +21,7 @@ function Hero({ s, zone, compact, onClose, onBack }) {
   );
 }
 
-/* Jauge d'état : de « Bon » à « Critique » */
+/* Jauge du niveau de valorisation : de « Bon » à « Critique » */
 function EtatGauge({ s }) {
   const scale = ['bon', 'satisfaisant', 'moyen', 'mauvais', 'critique'];
   const i = scale.indexOf(s.etatKey);
@@ -37,13 +37,11 @@ function Etat({ s }) {
   const last = fmtDate(s.lastEval), next = fmtDate(s.nextEval);
   const late = parseDate(s.nextEval) && parseDate(s.nextEval) < Date.now();
   return (
-    <div className="card"><h3>État &amp; évaluation</h3>
+    <div className="card"><h3>Niveau de valorisation</h3>
       <div className="etat-big" style={{ '--c': ETATS[s.etatKey].color }}>
         <Dot color={ETATS[s.etatKey].color} /><b>{isTbd(s.etat) ? ETATS[s.etatKey].label : s.etat}</b>
       </div>
       {s.etatKey !== 'nd' ? <EtatGauge s={s} /> : null}
-      {s.etatSource === 'calcul' ? <p className="hint">Déduit de la notation : moyenne de {fmtNote(s.notation.moyenne)}/{NOTE_MAX}.</p>
-        : s.etatSource === 'notation' ? <p className="hint">Selon la notation du site.</p> : null}
       <div className="grid2">
         <div className="kv"><span>Dernière évaluation</span><b>{last || <Val v="" />}</b>{since(s.lastEval) ? <small>{since(s.lastEval)}</small> : null}</div>
         <div className={`kv${late ? ' late' : ''}`}><span>Prochaine évaluation</span><b>{next || <Val v="" />}</b>{since(s.nextEval) ? <small>{late ? `en retard · ${since(s.nextEval)}` : since(s.nextEval)}</small> : null}</div>
@@ -52,67 +50,43 @@ function Etat({ s }) {
   );
 }
 
-/* Libellé d'un critère coupé en deux lignes au plus */
-function wrap(label, width = 15) {
-  const lines = [''];
-  for (const w of label.split(/\s+/)) {
-    const cur = lines[lines.length - 1];
-    if (cur && (cur + ' ' + w).length > width && lines.length < 2) lines.push(w);
-    else lines[lines.length - 1] = cur ? cur + ' ' + w : w;
-  }
-  return lines;
+/* Note sur NOTE_MAX en anneau qui se remplit ; couleur selon la note (vide tant qu'elle n'est pas renseignée) */
+function NoteRing({ n }) {
+  const R = 26, C = 2 * Math.PI * R;
+  const ratio = n === null ? 0 : Math.max(0, Math.min(1, n / NOTE_MAX));
+  const color = ratio >= .8 ? '#2fd08a' : ratio >= .6 ? '#9be15d' : ratio >= .4 ? '#f4c542' : ratio >= .2 ? '#ff7a59' : '#ff3b5c';
+  return (
+    <div className="ring" style={{ '--c': color }}>
+      <svg viewBox="0 0 64 64" width="64" height="64">
+        <circle className="ring-track" cx="32" cy="32" r={R} />
+        {n === null ? null : <circle className="ring-fill" cx="32" cy="32" r={R} strokeDasharray={C} style={{ '--off': C * (1 - ratio), '--len': C }} />}
+      </svg>
+      <b>{n === null ? '—' : n.toLocaleString('fr-FR', { maximumFractionDigits: 1 })}<small>/{NOTE_MAX}</small></b>
+    </div>
+  );
 }
 
-/* Profil du site en radar (hexagone pour 6 critères), à la manière des caractéristiques d'une équipe */
-function Radar({ n, color }) {
-  const W = 340, H = 290, cx = W / 2, cy = H / 2, R = 92, N = n.criteres.length;
-  const pt = (i, r) => {
-    const a = -Math.PI / 2 + i * 2 * Math.PI / N;
-    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
-  };
-  const ring = r => n.criteres.map((_, i) => pt(i, r).join(',')).join(' ');
+/* Valeur d'un indicateur : note sur NOTE_MAX (titre en « Note… »), nombre, ou texte tel quel */
+function Indicateur({ label, value }) {
+  const n = Number((value || '').replace(/[\s\u00a0\u202f]/g, '').replace(',', '.'));
+  const isNum = !isTbd(value) && value.trim() !== '' && isFinite(n);
+  if (/^note/.test(norm(label)) && (isNum || isTbd(value))) return (
+    <div className="kv ind note"><span>{label}</span><NoteRing n={isNum ? n : null} /></div>
+  );
   return (
-    <svg className="radar" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={n.criteres.map(c => `${c.label} : ${fmtNote(c.note)}/${NOTE_MAX}`).join(', ')}>
-      {Array.from({ length: NOTE_MAX }, (_, k) => <polygon key={k} className={`radar-ring${k === NOTE_MAX - 1 ? ' out' : ''}`} points={ring(R * (k + 1) / NOTE_MAX)} />)}
-      {n.criteres.map((_, i) => { const [x, y] = pt(i, R); return <line key={i} className="radar-axis" x1={cx} y1={cy} x2={x} y2={y} />; })}
-      {n.moyenne === null ? null : <g className="radar-shape" style={{ '--c': color, transformOrigin: `${cx}px ${cy}px` }}>
-        <polygon points={n.criteres.map((c, i) => pt(i, R * (c.note || 0) / NOTE_MAX).join(',')).join(' ')} />
-        {n.criteres.map((c, i) => { const [x, y] = pt(i, R * (c.note || 0) / NOTE_MAX); return <circle key={i} cx={x} cy={y} r="3.5" />; })}
-      </g>}
-      {n.criteres.map((c, i) => {
-        const [x, y] = pt(i, R + 16), dx = x - cx, dy = y - cy;
-        const anchor = Math.abs(dx) < 8 ? 'middle' : dx > 0 ? 'start' : 'end';
-        const lines = wrap(c.label), h = 16 + lines.length * 12;
-        // en haut le bloc remonte, en bas il descend, sur les côtés il est centré sur le sommet
-        const top = dy < -R / 2 ? y - h + 6 : dy > R / 2 ? y + 4 : y - h / 2 + 6;
-        return (
-          <text key={i} className="radar-label" x={x} y={top} textAnchor={anchor}>
-            <tspan className="v" x={x} dy="10" style={{ fill: c.note === null ? 'var(--faint)' : ETATS[etatOfNote(c.note)].color }}>{fmtNote(c.note)}</tspan>
-            {lines.map((l, j) => <tspan key={j} x={x} dy={j ? 12 : 14}>{l}</tspan>)}
-          </text>
-        );
-      })}
-    </svg>
+    <div className="kv ind">
+      <span>{label}</span>
+      {isNum ? <b className="big">{n.toLocaleString('fr-FR')}</b> : <b><Val v={value} /></b>}
+    </div>
   );
 }
 
 function Notation({ s }) {
-  const n = s.notation;
-  if (!n || !n.criteres.length) return null;
-  const color = ETATS[n.moyenne === null ? 'nd' : etatOfNote(n.moyenne)].color;
+  if (!s.notation.length) return null;
   return (
-    <div className="card"><h3>Notation <span className="n">{plural(n.criteres.length, 'critère')} · sur {NOTE_MAX}</span></h3>
-      {n.moyenne === null
-        ? <div className="score empty"><b>—</b><span>/{NOTE_MAX}</span><small>Site pas encore noté<br /><span className="tbd">À préciser</span></small></div>
-        : <div className="score" style={{ '--c': color }}>
-          <b>{fmtNote(n.moyenne)}</b><span>/{NOTE_MAX}</span>
-          <small>Moyenne des critères<br />{fmtNote(n.total)} / {n.max} points{n.complet ? '' : ' · notation incomplète'}</small>
-        </div>}
-      {n.criteres.length >= 3 ? <Radar n={n} color={color} /> : (
-        <div className="bars">{n.criteres.map((c, i) => (
-          <div key={i}><span>{c.label}</span><i><em style={{ width: `${(c.note || 0) / NOTE_MAX * 100}%` }}></em></i><b>{fmtNote(c.note)}</b></div>
-        ))}</div>
-      )}
+    <div className="card"><h3>Notation <span className="n">{plural(s.notation.length, 'indicateur')}</span></h3>
+      <div className="grid2" style={{ marginTop: 0 }}>{/* les nombres d'abord, puis les notes : chaque type sur sa propre ligne */}
+        {[...s.notation].sort((a, b) => /^note/.test(norm(a.label)) - /^note/.test(norm(b.label))).map(c => <Indicateur key={c.label} {...c} />)}</div>
     </div>
   );
 }

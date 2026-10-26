@@ -55,7 +55,7 @@ La ligne d'en-tête est repérée automatiquement (celle qui contient « Sites �
 | Sites | `sites`, `site`, `nom`… | Nom affiché (obligatoire — une ligne sans nom est ignorée) |
 | Categorie | `categorie`, `type` | Couleur et pictogramme du marqueur, filtre |
 | Pole economique | `pole`, `zone` | Zone de rattachement |
-| Etat du site | `etat` | Pastille, jauge, filtre |
+| Niveau de valorisation | `niveaudevalorisation`, `valorisation`, `etat` | Pastille, jauge, filtre |
 | Villes | `ville`, `commune` | Position sur la carte et regroupement dans la liste |
 | Date de la derniere évaluation | `datedeladerniere` | Fiche (+ « il y a… ») |
 | Date de la prochaine évaluation | `datedelaprochaine` | Fiche (+ « dans… », alerte si dépassée) |
@@ -75,7 +75,7 @@ La ligne d'en-tête est repérée automatiquement (celle qui contient « Sites �
 | cultur, spectacle, théâtre, cinéma | Infrastructures culturelles | violet |
 | autre chose | Autres (le texte d'origine est affiché dans la fiche) | gris |
 
-**États** (`etatOf`) : Bon · Satisfaisant · Moyen · Mauvais · Critique · Non déterminé (case vide, « A préciser » ou « Non déterminé »). Quelques synonymes sont acceptés (Très bon, Correct, Passable, Dégradé, Ruine…).
+**Niveaux de valorisation** (`etatOf`) : Bon · Satisfaisant · Moyen · Mauvais · Critique · Non déterminé (case vide, « A préciser » ou « Non déterminé »). Quelques synonymes sont acceptés (Très bon, Correct, Passable, Dégradé, Ruine…).
 
 **Dates** : format `JJ/MM/AAAA` (aussi `JJ-MM-AAAA`, `JJ.MM.AA` ou `AAAA-MM-JJ`). « A préciser » s'affiche comme champ à compléter.
 
@@ -104,16 +104,14 @@ La ligne d'en-tête est repérée automatiquement (celle qui contient « Sites �
 | Colonne | Utilisation |
 |---|---|
 | Sites | Nom du site (doit correspondre à l'onglet « Sites », accents et majuscules indifférents) |
-| Toutes les autres colonnes | **Critères**, notés sur 5. Le titre de la colonne sert de libellé dans la fiche : renommer « Critere 1 » en « Accessibilité » suffit. On peut en ajouter ou en retirer. |
-| Note globale, Total, Moyenne | Ignorées : la moyenne et le total sont recalculés |
-| Etat du site | *(facultatif)* État imposé |
+| Toutes les autres colonnes | **Indicateurs**. Le titre de la colonne sert de libellé dans la fiche ; on peut en ajouter, en retirer ou en renommer. |
 
-Dans la fiche, la carte **Notation** affiche la moyenne (sur 5), le total de points et un **radar** (hexagone pour 6 critères ; moins de 3 critères → barres). Chaque note est colorée selon le barème ci-dessous.
+Dans la fiche, la carte **Notation** affiche chaque indicateur dans une case :
+- titre commençant par « Note » (ex. « Note de satisfaction usagers ») → valeur **sur 5** avec une barre ;
+- autre valeur numérique (ex. « Nombre de visiteurs ») → nombre mis en forme (12 500) ;
+- case vide ou « A préciser » → « À préciser ». Un site absent de l'onglet affiche tous ses indicateurs « À préciser ».
 
-**Détermination de l'état d'un site** :
-1. « Etat du site » de l'onglet « Notations », s'il est renseigné ;
-2. sinon, déduit de la **moyenne des critères** (`ETAT_SEUILS` dans [src/lib/config.js](../src/lib/config.js)) : ≥ 4 Bon · ≥ 3 Satisfaisant · ≥ 2 Moyen · ≥ 1 Mauvais · < 1 Critique ;
-3. sinon (site non noté), « Etat du site » de l'onglet « Sites ».
+Le **niveau de valorisation** d'un site vient uniquement de la colonne « Niveau de valorisation » de l'onglet « Sites ».
 
 ---
 

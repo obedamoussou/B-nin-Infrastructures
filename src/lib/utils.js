@@ -1,5 +1,3 @@
-import { ETAT_SEUILS } from './config.js';
-
 /* ---------- utilitaires ---------- */
 export const norm = s => (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
 export const isTbd = v => !v || /^(a|à)\s*preciser$/i.test(v.normalize('NFD').replace(/[̀-ͯ]/g, '').trim()) || /^(n\/?a|-|—|nd|non\s*determine)$/i.test(v.normalize('NFD').replace(/[̀-ͯ]/g, '').trim());
@@ -65,10 +63,6 @@ export const ETATS = {
   critique: { label: 'Critique', color: '#ff3b5c', rank: 4 },
   nd: { label: 'Non déterminé', color: '#7f8db0', rank: 5 }
 };
-export function etatOfNote(moyenne) {
-  return moyenne === null ? 'nd' : ETAT_SEUILS.find(([min]) => moyenne >= min)[1];
-}
-export const fmtNote = n => n === null ? '—' : n.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
 export function etatOf(v) {
   const n = norm(v);
   if (!n || isTbd(v)) return 'nd';

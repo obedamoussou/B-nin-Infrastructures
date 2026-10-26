@@ -1,7 +1,7 @@
 import { CATEGORIES, ETATS, plural } from '../lib/utils.js';
 import { CatIcon, Dot, ICON } from './ui.jsx';
 
-/* Puces de filtre : catégories et états, avec leurs effectifs */
+/* Puces de filtre : catégories et niveaux de valorisation, avec leurs effectifs */
 function Filters({ pool, cats, etats, onCats, onEtats }) {
   const count = (key, field) => pool.filter(s => s[field] === key).length;
   const toggle = (set, k, fn) => { const n = new Set(set); n.has(k) ? n.delete(k) : n.add(k); fn(n); };
@@ -16,11 +16,11 @@ function Filters({ pool, cats, etats, onCats, onEtats }) {
       {group('Catégorie', cats, onCats, <>
         {Object.entries(CATEGORIES).filter(([k]) => count(k, 'cat')).map(([k, c]) => (
           <button key={k} className={`chip ${cats.has(k) ? 'on' : ''}`} onClick={() => toggle(cats, k, onCats)} title={c.label}>
-            <CatIcon cat={k} size={12} />{c.label.replace(/^Infrastructures /, '')} <span>{count(k, 'cat')}</span>
+            <CatIcon cat={k} size={12} />{c.label} <span>{count(k, 'cat')}</span>
           </button>
         ))}
       </>)}
-      {group('État', etats, onEtats, <>
+      {group('Niveau de valorisation', etats, onEtats, <>
         {Object.entries(ETATS).sort((a, b) => a[1].rank - b[1].rank).filter(([k]) => count(k, 'etatKey')).map(([k, e]) => (
           <button key={k} className={`chip ${etats.has(k) ? 'on' : ''}`} onClick={() => toggle(etats, k, onEtats)}>
             <Dot color={e.color} />{e.label} <span>{count(k, 'etatKey')}</span>

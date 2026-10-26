@@ -10,11 +10,8 @@ export const TABS = {
   notations: { name: 'Notations', gid: '243181381' }
 };
 
-/* Notation des sites : chaque critère est noté sur NOTE_MAX.
-   Si l'onglet « Notations » ne précise pas l'état, il est déduit de la moyenne des critères
-   (moyenne ≥ seuil → état ; on prend le premier seuil atteint). */
+/* Notation : les indicateurs dont le titre commence par « Note » sont sur NOTE_MAX */
 export const NOTE_MAX = 5;
-export const ETAT_SEUILS = [[4, 'bon'], [3, 'satisfaisant'], [2, 'moyen'], [1, 'mauvais'], [0, 'critique']];
 export const REFRESH_EVERY = 5 * 60 * 1000; // resynchronisation automatique toutes les 5 minutes
 
 /* Vue initiale : tout le Bénin */

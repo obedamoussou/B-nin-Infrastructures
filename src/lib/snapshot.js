@@ -5,7 +5,7 @@ const GN = 'Pole Grand Nokoué', CE = 'Pole Centre', NO = 'Pole Nord Ouest', NE 
 
 export const SNAPSHOT = {
   sites: [
-    ['Sites', 'Categorie', 'Pole economique', 'Etat du site', 'Villes', 'Date de la derniere évalutation', 'Date de la prochaine évaluation', 'Actions à entreprendre'],
+    ['Sites', 'Categorie', 'Pole economique', 'Niveau de valorisation', 'Villes', 'Date de la derniere évalutation', 'Date de la prochaine évaluation', 'Actions à entreprendre'],
     ["Arbre de l'Oubli", M, GN, 'Bon', 'Ouidah'],
     ['Arbre du Retour', M, GN, 'Bon', 'Ouidah'],
     ['Arène culturelle de Ouidah', M, GN, 'Bon', 'Ouidah'],
@@ -67,8 +67,8 @@ export const SNAPSHOT = {
     ].flatMap(([pole, ...villes]) => villes.map((v, i) => [i ? '' : pole, v]))
   ],
   notations: [
-    ['Sites', 'Critere 1', 'Critere 2', 'Critere 3', 'Critere 4', 'Critere 5', 'Critere 6', 'Note globale', 'Etat du site'],
-    ['Musée international du Vodun', '5', '5', '5', '5', '5', '5', '25', 'Bon']
+    ['Sites', "Nombre d'outils modernes", 'Note de satisfaction usagers', 'Nombre de visiteurs', 'Note de satisfaction touristes'],
+    ['Musée international du Vodun', 'A préciser', 'A préciser', 'A préciser', 'A préciser']
   ],
   projets: [
     [],
